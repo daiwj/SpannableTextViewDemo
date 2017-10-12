@@ -22,7 +22,6 @@ import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.ImageSpan;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -49,8 +48,8 @@ public class SpannableTextView extends AppCompatTextView {
     private boolean isMoved = false;
     private boolean isClickedSpan = false;
 
-    private int mMotionX, mMotionY;
     private ViewConfiguration configuration;
+    private int mMotionX, mMotionY;
 
     public SpannableTextView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -169,9 +168,10 @@ public class SpannableTextView extends AppCompatTextView {
      * @param content 指定内容
      * @param size    字体大小
      */
-    public SpannableTextView setSingleSize(String content, int size) {
-        if (!TextUtils.isEmpty(getText())) {
-            int start = getText().toString().indexOf(content);
+    public SpannableTextView buildSize(String content, int size) {
+        final String origin = getText().toString();
+        if (!TextUtils.isEmpty(origin)) {
+            int start = origin.indexOf(content);
             if (start > -1) {
                 Span span = new Span();
                 span.span = new AbsoluteSizeSpan((int) (getResources().getDisplayMetrics().density * size + 0.5f));
@@ -190,9 +190,10 @@ public class SpannableTextView extends AppCompatTextView {
      * @param content 指定内容
      * @param color   字体颜色
      */
-    public SpannableTextView setSingleColor(String content, int color) {
-        if (!TextUtils.isEmpty(getText())) {
-            int start = getText().toString().indexOf(content);
+    public SpannableTextView buildColor(String content, int color) {
+        final String origin = getText().toString();
+        if (!TextUtils.isEmpty(origin)) {
+            int start = origin.indexOf(content);
             if (start > -1) {
                 Span span = new Span();
                 span.span = new ForegroundColorSpan(color);
@@ -211,8 +212,8 @@ public class SpannableTextView extends AppCompatTextView {
      * @param content 指定内容
      * @param color   字体颜色
      */
-    public SpannableTextView setSingleColor(String content, String color) {
-        return setSingleColor(content, Color.parseColor(color));
+    public SpannableTextView buildColor(String content, String color) {
+        return buildColor(content, Color.parseColor(color));
     }
 
     /**
@@ -221,14 +222,13 @@ public class SpannableTextView extends AppCompatTextView {
      * @param separator 分隔符 例如：#111#222#333#，#号为分隔符
      * @param color     字体颜色
      */
-    public SpannableTextView setMultipleColor(char separator, int color) {
+    public SpannableTextView buildColors(String separator, int color) {
         final String origin = getText().toString();
         if (!TextUtils.isEmpty(origin)) {
-            final String separatorStr = String.valueOf(separator);
-            final List<String> matchedTexts = getMatchedTexts(origin, separatorStr);
+            final List<String> texts = findMatchedTexts(origin, separator);
             int fromIndex = 0;
-            for (int i = 0, size = matchedTexts.size(); i < size; i++) {
-                String special = matchedTexts.get(i);
+            for (int i = 0, size = texts.size(); i < size; i++) {
+                String special = texts.get(i);
                 if (!TextUtils.isEmpty(special)) {
                     int start = origin.indexOf(special, fromIndex);
                     if (start > -1) {
@@ -236,7 +236,7 @@ public class SpannableTextView extends AppCompatTextView {
                         span.span = new ForegroundColorSpan(color);
                         span.start = start;
                         span.end = start + special.length();
-                        span.separator = separatorStr;
+                        span.separator = separator;
                         span.flag = Spannable.SPAN_EXCLUSIVE_EXCLUSIVE;
                         spanList.add(span);
                         fromIndex = span.end;
@@ -253,11 +253,11 @@ public class SpannableTextView extends AppCompatTextView {
      * @param separator 分隔符 例如：#111#222#333#，#号为分隔符
      * @param color     字体颜色
      */
-    public SpannableTextView setMultipleColor(char separator, String color) {
-        return setMultipleColor(separator, Color.parseColor(color));
+    public SpannableTextView buildColors(String separator, String color) {
+        return buildColors(separator, Color.parseColor(color));
     }
 
-    private List<String> getMatchedTexts(String origin, String pattern) {
+    private List<String> findMatchedTexts(String origin, String pattern) {
         List<Integer> indexList = new ArrayList<>();
         List<String> textList = new ArrayList<>();
         for (int i = -1; i <= origin.lastIndexOf(pattern); ++i) {
@@ -280,8 +280,8 @@ public class SpannableTextView extends AppCompatTextView {
      * @param color 字体颜色
      * @param texts 多个文本
      */
-    public SpannableTextView setMultipleColor(int color, String... texts) {
-        return setMultipleColor(Arrays.asList(texts), color);
+    public SpannableTextView buildColors(int color, String... texts) {
+        return buildColors(Arrays.asList(texts), color);
     }
 
     /**
@@ -290,8 +290,8 @@ public class SpannableTextView extends AppCompatTextView {
      * @param color 字体颜色
      * @param texts 多个文本
      */
-    public SpannableTextView setMultipleColor(String color, String... texts) {
-        return setMultipleColor(Arrays.asList(texts), Color.parseColor(color));
+    public SpannableTextView buildColors(String color, String... texts) {
+        return buildColors(Arrays.asList(texts), Color.parseColor(color));
     }
 
     /**
@@ -300,8 +300,8 @@ public class SpannableTextView extends AppCompatTextView {
      * @param texts 多个文本
      * @param color 字体颜色
      */
-    public SpannableTextView setMultipleColor(List<String> texts, String color) {
-        return setMultipleColor(texts, Color.parseColor(color));
+    public SpannableTextView buildColors(List<String> texts, String color) {
+        return buildColors(texts, Color.parseColor(color));
     }
 
     /**
@@ -310,7 +310,7 @@ public class SpannableTextView extends AppCompatTextView {
      * @param texts 多个文本
      * @param color 字体颜色
      */
-    public SpannableTextView setMultipleColor(List<String> texts, int color) {
+    public SpannableTextView buildColors(List<String> texts, int color) {
         final String origin = getText().toString();
         if (!TextUtils.isEmpty(origin)) {
             int fromIndex = 0;
@@ -337,15 +337,14 @@ public class SpannableTextView extends AppCompatTextView {
      * 设置文本内容中指定文本的字体颜色, 只能设置一处
      *
      * @param regex 正则表达式（表达式不能包含中、韩、日字符）
-     * @param color   指定颜色
+     * @param color 指定颜色
      */
-    public SpannableTextView matchColor(String regex, int color) {
+    public SpannableTextView matchColors(String regex, int color) {
         final String origin = getText().toString();
         if (!TextUtils.isEmpty(origin)) {
             Pattern p = Pattern.compile(regex);
             Matcher m = p.matcher(origin);
             while (m.find()) {
-                    Log.d(TAG, m.group());
                 Span span = new Span();
                 span.span = new ForegroundColorSpan(color);
                 span.start = m.start();
@@ -360,30 +359,53 @@ public class SpannableTextView extends AppCompatTextView {
     /**
      * 设置文本内容中指定文本的字体颜色, 只能设置一处
      *
-     * @param content 指定内容
-     * @param bitmap   制定的图片
+     * @param regex 正则表达式（表达式不能包含中、韩、日字符）
+     * @param color 指定颜色
      */
-    public SpannableTextView setSingleImage(String content, Bitmap bitmap) {
-        return setSingleImage(content, new BitmapDrawable(getResources(), bitmap));
+    public SpannableTextView matchColors(String regex, String color) {
+        final String origin = getText().toString();
+        if (!TextUtils.isEmpty(origin)) {
+            Pattern p = Pattern.compile(regex);
+            Matcher m = p.matcher(origin);
+            while (m.find()) {
+                Span span = new Span();
+                span.span = new ForegroundColorSpan(Color.parseColor(color));
+                span.start = m.start();
+                span.end = m.end();
+                span.flag = Spannable.SPAN_EXCLUSIVE_EXCLUSIVE;
+                spanList.add(span);
+            }
+        }
+        return this;
     }
 
     /**
      * 设置文本内容中指定文本的字体颜色, 只能设置一处
      *
      * @param content 指定内容
-     * @param drawable   制定的图片
+     * @param bitmap  制定的图片
      */
-    public SpannableTextView setSingleImage(String content, int drawable) {
-        return setSingleImage(content, ContextCompat.getDrawable(getContext(), drawable));
+    public SpannableTextView buildImage(String content, Bitmap bitmap) {
+        return buildImage(content, new BitmapDrawable(getResources(), bitmap));
     }
 
     /**
      * 设置文本内容中指定文本的字体颜色, 只能设置一处
      *
-     * @param content 指定内容
-     * @param drawable   制定的图片
+     * @param content  指定内容
+     * @param drawable 制定的图片
      */
-    public SpannableTextView setSingleImage(String content, Drawable drawable) {
+    public SpannableTextView buildImage(String content, int drawable) {
+        return buildImage(content, ContextCompat.getDrawable(getContext(), drawable));
+    }
+
+    /**
+     * 设置文本内容中指定文本的字体颜色, 只能设置一处
+     *
+     * @param content  指定内容
+     * @param drawable 制定的图片
+     */
+    public SpannableTextView buildImage(String content, Drawable drawable) {
         final String origin = getText().toString();
         if (!TextUtils.isEmpty(origin) && drawable != null) {
             drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
@@ -393,29 +415,6 @@ public class SpannableTextView extends AppCompatTextView {
                 span.span = new ImageSpan(drawable, ImageSpan.ALIGN_BOTTOM);
                 span.start = start;
                 span.end = start + content.length();
-                span.flag = Spannable.SPAN_EXCLUSIVE_EXCLUSIVE;
-                spanList.add(span);
-            }
-        }
-        return this;
-    }
-
-    /**
-     * 设置文本内容中指定文本的字体颜色, 只能设置一处
-     *
-     * @param content 正则表达式（表达式不能包含中、韩、日字符）
-     * @param drawable   制定的图片
-     */
-    public SpannableTextView setMultipleColor(String regex, int color) {
-        final String origin = getText().toString();
-        if (!TextUtils.isEmpty(origin)) {
-            Pattern p = Pattern.compile(regex);
-            Matcher m = p.matcher(origin);
-            while (m.find()) {
-                Span span = new Span();
-                span.span = new ForegroundColorSpan(color);
-                span.start = m.start();
-                span.end = m.end();
                 span.flag = Spannable.SPAN_EXCLUSIVE_EXCLUSIVE;
                 spanList.add(span);
             }
