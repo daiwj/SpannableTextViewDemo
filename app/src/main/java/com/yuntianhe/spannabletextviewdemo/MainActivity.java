@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
                 .buildSize("变大", 50)
                 .buildImage("应用图标1", BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
                 .buildImage("应用图标2", R.mipmap.ic_launcher)
-                .setTextClick("黄色可点击", Color.YELLOW, new View.OnClickListener() {
+                .buildClick("黄色可点击", Color.YELLOW, new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         Log.d("SpannableTextView", "黄色可点击");

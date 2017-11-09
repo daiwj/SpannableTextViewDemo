@@ -383,7 +383,7 @@ public class SpannableTextView extends AppCompatTextView {
      * 设置文本内容中指定文本的字体颜色, 只能设置一处
      *
      * @param content 指定内容
-     * @param bitmap  制定的图片
+     * @param bitmap  指定的图片
      */
     public SpannableTextView buildImage(String content, Bitmap bitmap) {
         return buildImage(content, new BitmapDrawable(getResources(), bitmap));
@@ -393,7 +393,7 @@ public class SpannableTextView extends AppCompatTextView {
      * 设置文本内容中指定文本的字体颜色, 只能设置一处
      *
      * @param content  指定内容
-     * @param drawable 制定的图片
+     * @param drawable 指定的图片
      */
     public SpannableTextView buildImage(String content, int drawable) {
         return buildImage(content, ContextCompat.getDrawable(getContext(), drawable));
@@ -403,7 +403,7 @@ public class SpannableTextView extends AppCompatTextView {
      * 设置文本内容中指定文本的字体颜色, 只能设置一处
      *
      * @param content  指定内容
-     * @param drawable 制定的图片
+     * @param drawable 指定的图片
      */
     public SpannableTextView buildImage(String content, Drawable drawable) {
         final String origin = getText().toString();
@@ -429,9 +429,8 @@ public class SpannableTextView extends AppCompatTextView {
      * @param color    字体颜色
      * @param listener 点击事件
      */
-    public SpannableTextView setTextClick(final String content, final int color, final View.OnClickListener listener) {
+    public SpannableTextView buildClick(final String content, final int color, final View.OnClickListener listener) {
         if (!TextUtils.isEmpty(getText())) {
-            setHighlightColor(Color.RED);
             int start = getText().toString().indexOf(content);
             if (start > -1) {
                 ClickableSpan clickSpan = new ClickableSpan() {
