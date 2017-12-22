@@ -4,8 +4,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -26,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
                 .buildClick("黄色可点击", Color.YELLOW, new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Log.d("SpannableTextView", "黄色可点击");
+                        Toast.makeText(MainActivity.this, "黄色可点击", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .apply();

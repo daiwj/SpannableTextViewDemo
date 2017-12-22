@@ -22,6 +22,7 @@ import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.ImageSpan;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -45,16 +46,10 @@ public class SpannableTextView extends AppCompatTextView {
 
     private final ArrayList<Span> spanList = new ArrayList<>();
 
-    private boolean isMoved = false;
     private boolean isClickedSpan = false;
-
-    private ViewConfiguration configuration;
-    private int mMotionX, mMotionY;
 
     public SpannableTextView(Context context, AttributeSet attrs) {
         super(context, attrs);
-
-        configuration = ViewConfiguration.get(context);
     }
 
     private class Span {
@@ -72,9 +67,17 @@ public class SpannableTextView extends AppCompatTextView {
 
         private static InnerMovementMethod sInstance;
 
-        public static InnerMovementMethod getInstance() {
+        private ViewConfiguration configuration;
+        private boolean isMoved = false;
+        private int mMotionX, mMotionY;
+
+        private InnerMovementMethod(Context context) {
+            configuration = ViewConfiguration.get(context);
+        }
+
+        public static InnerMovementMethod getInstance(Context context) {
             if (sInstance == null) {
-                sInstance = new InnerMovementMethod();
+                sInstance = new InnerMovementMethod(context);
             }
             return sInstance;
         }
@@ -83,78 +86,65 @@ public class SpannableTextView extends AppCompatTextView {
         public boolean onTouchEvent(TextView widget, Spannable buffer, MotionEvent event) {
             int action = event.getAction();
 
-            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_UP) {
-                int x = (int) event.getX();
-                int y = (int) event.getY();
+            int x = (int) event.getX();
+            int y = (int) event.getY();
 
-                x -= widget.getTotalPaddingLeft();
-                y -= widget.getTotalPaddingTop();
+            x -= widget.getTotalPaddingLeft();
+            y -= widget.getTotalPaddingTop();
 
-                x += widget.getScrollX();
-                y += widget.getScrollY();
+            x += widget.getScrollX();
+            y += widget.getScrollY();
 
-                Layout layout = widget.getLayout();
-                int line = layout.getLineForVertical(y);
-                int off = layout.getOffsetForHorizontal(line, x);
+            Layout layout = widget.getLayout();
+            int line = layout.getLineForVertical(y);
+            int off = layout.getOffsetForHorizontal(line, x);
 
-                ClickableSpan[] link = buffer.getSpans(off, off, ClickableSpan.class);
+            ClickableSpan[] link = buffer.getSpans(off, off, ClickableSpan.class);
 
-                if (link.length != 0) {
-                    switch (action) {
-                        case MotionEvent.ACTION_DOWN:
-                            buffer.setSpan(new BackgroundColorSpan(Color.LTGRAY),
-                                    buffer.getSpanStart(link[0]), buffer.getSpanEnd(link[0]),
-                                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                            Selection.setSelection(buffer,
-                                    buffer.getSpanStart(link[0]),
-                                    buffer.getSpanEnd(link[0]));
-                            break;
-                        case MotionEvent.ACTION_UP:
-                            buffer.setSpan(new BackgroundColorSpan(Color.TRANSPARENT),
-                                    buffer.getSpanStart(link[0]), buffer.getSpanEnd(link[0]),
-                                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                            Selection.removeSelection(buffer);
-
-                            SpannableTextView parent = (SpannableTextView) widget;
-                            ((SpannableTextView) widget).isClickedSpan = !parent.isMoved; // 防止触发TextView自身点击事件
-                            if (parent.isClickedSpan) {
-                                link[0].onClick(widget);
+            if (link.length != 0) {
+                switch (action) {
+                    case MotionEvent.ACTION_DOWN:
+                        isMoved = false;
+                        mMotionX = x;
+                        mMotionY = y;
+                        buffer.setSpan(new BackgroundColorSpan(Color.LTGRAY),
+                                buffer.getSpanStart(link[0]), buffer.getSpanEnd(link[0]),
+                                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        Selection.setSelection(buffer,
+                                buffer.getSpanStart(link[0]),
+                                buffer.getSpanEnd(link[0]));
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        if (!isMoved) {
+                            if (Math.abs(x - mMotionX) > configuration.getScaledTouchSlop()
+                                    || Math.abs(y - mMotionY) > configuration.getScaledTouchSlop()) {
+                                buffer.setSpan(new BackgroundColorSpan(Color.TRANSPARENT),
+                                        buffer.getSpanStart(link[0]), buffer.getSpanEnd(link[0]),
+                                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                Selection.removeSelection(buffer);
+                                isMoved = true;
                             }
-                            break;
-                        case MotionEvent.ACTION_CANCEL:
-                            buffer.setSpan(new BackgroundColorSpan(Color.TRANSPARENT),
-                                    buffer.getSpanStart(link[0]), buffer.getSpanEnd(link[0]),
-                                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                            Selection.removeSelection(buffer);
-                            break;
-                    }
-                    return true;
-                } else {
-                    Selection.removeSelection(buffer);
+                        }
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        buffer.setSpan(new BackgroundColorSpan(Color.TRANSPARENT),
+                                buffer.getSpanStart(link[0]), buffer.getSpanEnd(link[0]),
+                                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        Selection.removeSelection(buffer);
+
+                        SpannableTextView parent = (SpannableTextView) widget;
+                        ((SpannableTextView) widget).isClickedSpan = !isMoved; // 防止触发TextView自身点击事件
+                        if (parent.isClickedSpan) {
+                            link[0].onClick(widget);
+                        }
+                        break;
                 }
+                return true;
+            } else {
+                Selection.removeSelection(buffer);
             }
             return super.onTouchEvent(widget, buffer, event);
         }
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        final int x = (int) event.getX();
-        final int y = (int) event.getY();
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                isMoved = false;
-                mMotionX = x;
-                mMotionY = y;
-                break;
-            case MotionEvent.ACTION_MOVE:
-                if (Math.abs(x - mMotionX) > configuration.getScaledTouchSlop()
-                        || Math.abs(y - mMotionY) > configuration.getScaledTouchSlop()) {
-                    isMoved = true;
-                }
-                break;
-        }
-        return super.onTouchEvent(event);
     }
 
     @Override
@@ -450,7 +440,7 @@ public class SpannableTextView extends AppCompatTextView {
                         ds.clearShadowLayer();
                     }
                 };
-                setMovementMethod(InnerMovementMethod.getInstance());
+                setMovementMethod(InnerMovementMethod.getInstance(getContext()));
 
                 Span span = new Span();
                 span.span = clickSpan;
